@@ -237,7 +237,9 @@ async fn sync_repository(app: AppHandle, id: i64) -> Result<usize, String> {
         let db = connect(&app)?;
         db.query_row("SELECT url,name FROM repositories WHERE id=?1 AND enabled=1", [id], |r| Ok((r.get::<_,String>(0)?, r.get::<_,String>(1)?))).map_err(|e| e.to_string())?
     };
-    let response = reqwest::Client::new().get(&url).header("User-Agent", "Vapora/0.2").send().await.map_err(|e| e.to_string())?.error_for_status().map_err(|e| e.to_string())?;
+    let response = reqwest::Client::builder().user_agent("Vapora/0.9 (catalog client)").build().map_err(|e| e.to_string())?.get(&url).send().await.map_err(|e| format!("Falha de conexão com o catálogo: {e}"))?;
+    if response.status() == reqwest::StatusCode::FORBIDDEN { return Err("A fonte recusou o acesso (HTTP 403 Forbidden). O servidor não autorizou esta requisição; o Vapora não consegue importar esse catálogo enquanto o provedor mantiver o bloqueio.".into()); }
+    let response = response.error_for_status().map_err(|e| format!("O catálogo respondeu com erro HTTP: {e}"))?;
     if response.url().scheme() != "https" { return Err("O repositório redirecionou para uma conexão não segura".into()); }
     let catalog: Catalog = response.json().await.map_err(|e| format!("Catálogo JSON inválido: {e}"))?;
     let db = connect(&app)?;

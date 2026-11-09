@@ -42,67 +42,13 @@ jobs:
       - name: Install frontend dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Generate Windows application icon
+      - name: Prepare Vapora logo as application icon
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
           New-Item -ItemType Directory -Force src-tauri/icons | Out-Null
-          @'
-          const fs = require("fs");
-          const zlib = require("zlib");
-          const size = 256;
-          const crc32 = (buf) => {
-            let c = 0xffffffff;
-            for (const b of buf) {
-              c ^= b;
-              for (let k = 0; k < 8; k++) c = (c >>> 1) ^ (0xedb88320 & -(c & 1));
-            }
-            return (c ^ 0xffffffff) >>> 0;
-          };
-          const chunk = (type, data) => {
-            const t = Buffer.from(type);
-            const out = Buffer.alloc(12 + data.length);
-            out.writeUInt32BE(data.length, 0);
-            t.copy(out, 4);
-            data.copy(out, 8);
-            out.writeUInt32BE(crc32(Buffer.concat([t, data])), 8 + data.length);
-            return out;
-          };
-          const rows = Buffer.alloc((size * 4 + 1) * size);
-          for (let y = 0; y < size; y++) {
-            const row = y * (size * 4 + 1);
-            rows[row] = 0;
-            for (let x = 0; x < size; x++) {
-              const dx = x - 128, dy = y - 128;
-              const i = row + 1 + x * 4;
-              const inside = Math.abs(dx) < 78 && Math.abs(dy) < 78;
-              rows[i] = inside ? 31 : 11;
-              rows[i+1] = inside ? 190 : 17;
-              rows[i+2] = inside ? 170 : 24;
-              rows[i+3] = 255;
-              if (Math.abs(dx) < 17 && Math.abs(dy) < 58) {
-                rows[i] = 240; rows[i+1] = 250; rows[i+2] = 250;
-              }
-            }
-          }
-          const ihdr = Buffer.alloc(13);
-          ihdr.writeUInt32BE(size, 0); ihdr.writeUInt32BE(size, 4);
-          ihdr[8] = 8; ihdr[9] = 6;
-          const png = Buffer.concat([
-            Buffer.from([137,80,78,71,13,10,26,10]),
-            chunk("IHDR", ihdr),
-            chunk("IDAT", zlib.deflateSync(rows)),
-            chunk("IEND", Buffer.alloc(0))
-          ]);
-          const icoHeader = Buffer.alloc(22);
-          icoHeader.writeUInt16LE(0,0); icoHeader.writeUInt16LE(1,2); icoHeader.writeUInt16LE(1,4);
-          icoHeader[6] = 0; icoHeader[7] = 0;
-          icoHeader.writeUInt16LE(1,10); icoHeader.writeUInt16LE(32,12);
-          icoHeader.writeUInt32LE(png.length,14); icoHeader.writeUInt32LE(22,18);
-          fs.writeFileSync("src-tauri/icons/icon.ico", Buffer.concat([icoHeader, png]));
-          '@ | Set-Content -Encoding utf8 "$env:RUNNER_TEMP/make-icon.cjs"
-          node "$env:RUNNER_TEMP/make-icon.cjs"
-          if (-not (Test-Path src-tauri/icons/icon.ico)) { throw "icon.ico was not generated" }
+          Copy-Item "src/assets/Logo Gamer Vaporoso Vapora feito em.png" "src-tauri/icons/vapora.png"
+          if (-not (Test-Path src-tauri/icons/vapora.png)) { throw "Vapora logo PNG was not copied" }
 
       - name: Build Windows installers
         run: npm run tauri build -- --bundles nsis,msi

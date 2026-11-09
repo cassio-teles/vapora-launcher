@@ -453,6 +453,30 @@ fn extract_zip(archive_path: String, destination_dir: String) -> Result<String, 
 }
 
 #[tauri::command]
+fn open_steam_store(appid: u64) -> Result<(), String> {
+    let url = format!("https://store.steampowered.com/app/{appid}/");
+    #[cfg(target_os="windows")]
+    Command::new("cmd").args(["/C", "start", "", &url]).spawn().map_err(|e| e.to_string())?;
+    #[cfg(target_os="linux")]
+    Command::new("xdg-open").arg(&url).spawn().map_err(|e| e.to_string())?;
+    #[cfg(target_os="macos")]
+    Command::new("open").arg(&url).spawn().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+fn open_steam_install(appid: u64) -> Result<(), String> {
+    let uri = format!("steam://install/{appid}");
+    #[cfg(target_os="windows")]
+    Command::new("cmd").args(["/C", "start", "", &uri]).spawn().map_err(|e| e.to_string())?;
+    #[cfg(target_os="linux")]
+    Command::new("xdg-open").arg(&uri).spawn().map_err(|e| e.to_string())?;
+    #[cfg(target_os="macos")]
+    Command::new("open").arg(&uri).spawn().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
 fn launch_game(executable: String) -> Result<(), String> {
     let path = PathBuf::from(&executable);
     if !path.is_file() { return Err("Executável não encontrado. Confira o caminho nas propriedades do jogo.".into()); }
@@ -474,7 +498,7 @@ fn reveal_path(path: String) -> Result<(), String> {
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![fetch_steam_game_details,fetch_steam_game_reviews,list_games,list_catalog_games,add_game,remove_game,list_repositories,add_repository,sync_repository,remove_repository,list_game_sources,download_game_source,extract_zip,launch_game,reveal_path])
+        .invoke_handler(tauri::generate_handler![fetch_steam_game_details,fetch_steam_game_reviews,open_steam_store,open_steam_install,list_games,list_catalog_games,add_game,remove_game,list_repositories,add_repository,sync_repository,remove_repository,list_game_sources,download_game_source,extract_zip,launch_game,reveal_path])
         .run(tauri::generate_context!())
         .expect("error while running Vapora");
 }

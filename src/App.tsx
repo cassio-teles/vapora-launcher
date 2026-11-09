@@ -262,7 +262,7 @@ export default function App() {
               <button className="featured-arrow next" aria-label="Próximo jogo" onClick={() => setFeaturedIndex(index => (index + 1) % catalog.length)}><ChevronRight size={30}/></button>
             </div>
             <div className="featured-pagination">{catalog.slice(0,Math.min(catalog.length,12)).map((game,i)=><button key={game.id} aria-label={`Mostrar ${game.title}`} className={i===featuredIndex?'active':''} onClick={()=>setFeaturedIndex(i)}/>)}</div>
-          </section> : <section className="welcome-empty"><div className="welcome-orb"><Gamepad2 size={34}/></div><div><span className="kicker">SUA LOJA, SUAS FONTES</span><h2>Adicione seu primeiro repositório.</h2><p>Os jogos aparecem aqui depois que você conectar e sincronizar um catálogo.</p><button className="primary-button" onClick={() => setModal('repo')}><Plus size={16}/> Conectar repositório</button></div></section>}
+          </section> : !steamSpotlight && <section className="welcome-empty"><div className="welcome-orb"><Gamepad2 size={34}/></div><div><span className="kicker">SUA LOJA, SUAS FONTES</span><h2>Adicione seu primeiro repositório.</h2><p>Os jogos aparecem aqui depois que você conectar e sincronizar um catálogo.</p><button className="primary-button" onClick={() => setModal('repo')}><Plus size={16}/> Conectar repositório</button></div></section>}
           {steamSpotlight && <section className="steam-featured steam-api-featured" id="store-featured">
             <div className="featured-heading"><h2>Destaques e recomendados</h2><span>LOJA STEAM • ATUALIZAÇÃO AUTOMÁTICA</span></div>
             <div className="featured-stage">
@@ -316,6 +316,7 @@ function SteamGameDetail({ game, owned, onAcquire, onRepository, onBack }: {
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [detailError, setDetailError] = useState('');
+  const [steamActionError, setSteamActionError] = useState('');
   useEffect(() => {
     let active = true;
     setLoading(true); setDetailError('');
@@ -338,7 +339,7 @@ function SteamGameDetail({ game, owned, onAcquire, onRepository, onBack }: {
         <p>{(details?.developers || []).join(', ') || 'Informações oficiais da Steam'}</p>
         <div className="detail-buttons">
           {owned ? <a className="primary-button" href={'steam://install/' + game.appid}><Download size={16}/> Baixar</a> : <button className="primary-button" onClick={onAcquire}><Plus size={16}/> Adicionar à biblioteca</button>}
-          <a className="ghost-button" href={'https://store.steampowered.com/app/' + game.appid + '/'} target="_blank" rel="noreferrer">Adquirir na Steam <ChevronRight size={15}/></a>
+          <button className="ghost-button" onClick={() => invoke('open_steam_store', { appid: game.appid }).catch(error => setSteamActionError(String(error)))}>Adquirir na Steam <ChevronRight size={15}/></button>
         </div>
       </div>
     </section>
@@ -354,7 +355,7 @@ function SteamGameDetail({ game, owned, onAcquire, onRepository, onBack }: {
         </section>
       </div>
       <aside className="steam-detail-facts"><span className="kicker">INFORMAÇÕES</span><div><small>Desenvolvedor</small><b>{(details?.developers || []).join(', ') || '—'}</b></div><div><small>Publicadora</small><b>{(details?.publishers || []).join(', ') || '—'}</b></div><div><small>Gêneros</small><b>{(details?.genres || []).map((item: any) => item.description).join(', ') || '—'}</b></div><div><small>Preço na Steam</small><b>{details?.price_overview?.final_formatted || 'Consulte a loja'}</b></div><div><small>Biblioteca Vapora</small><b>{owned ? 'Adicionado' : 'Não adicionado'}</b></div>
-        {owned && <div className="steam-source-choices"><h3>Escolher versão para baixar</h3><a href={'steam://install/' + game.appid}><Download size={15}/> Baixar versão Steam</a><button onClick={onRepository}><Database size={15}/> Baixar via repositório</button><small>O repositório precisa conter uma entrada correspondente e uma fonte legítima para este jogo.</small></div>}
+        {steamActionError && <small className="steam-action-error">{steamActionError}</small>}{owned && <div className="steam-source-choices"><h3>Escolher versão para baixar</h3><button onClick={() => invoke('open_steam_install', { appid: game.appid }).catch(error => setSteamActionError(String(error)))}><Download size={15}/> Baixar versão Steam</button><button onClick={onRepository}><Database size={15}/> Baixar via repositório</button><small>O repositório precisa conter uma entrada correspondente e uma fonte legítima para este jogo.</small></div>}
       </aside>
     </div>
   </div>;

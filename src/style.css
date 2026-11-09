@@ -522,3 +522,19 @@ body{min-width:900px;min-height:650px;background:var(--steam-deep)}
  .store-toolbar{padding:0 5px}.store-toolbar button{padding:0 7px;font-size:9px}.store-toolbar-right{display:none}
  .featured-stage{grid-template-columns:1fr;padding:0 18px}.featured-art{min-height:230px}.featured-details{min-height:180px}
 }
+
+/* 0.7 storefront and custom titlebar fixes */
+.store-toolbar{padding-left:24px!important}
+.app-body:has(>.main-content.store-full-width){display:block;width:100%}
+.main-content.store-full-width{width:100%;max-width:none;margin:0;padding-left:clamp(28px,5vw,76px);padding-right:clamp(28px,5vw,76px)}
+.window-chrome{cursor:default;touch-action:pan-x}
+.window-chrome [data-tauri-drag-region],.chrome-brand,.chrome-brand span{cursor:move;user-select:none}
+.window-controls,.window-controls button{cursor:default;-webkit-app-region:no-drag}
+.steam-store-grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+.steam-store-card{display:flex;flex-direction:column;gap:8px;min-width:0;padding:0 0 12px;text-decoration:none;background:#1b2b3a;border:1px solid #304a60;color:#dce8f1;transition:transform .16s,border-color .16s}
+.steam-store-card:hover{transform:translateY(-2px);border-color:#66c0f4}
+.steam-store-card img{display:block;width:100%;aspect-ratio:460/215;object-fit:cover;background:#101923}
+.steam-store-card b,.steam-store-card span{margin:0 11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.steam-store-card b{font-size:12px}.steam-store-card span{font-size:10px;color:#9fc9e4}
+.steam-api-featured .featured-art{display:block;text-decoration:none}
+@media(max-width:760px){.main-content.store-full-width{padding-left:14px;padding-right:14px}.store-toolbar{padding:0 5px!important}}

@@ -23,5 +23,10 @@
       "csp": "default-src 'self'; img-src 'self' asset: http://asset.localhost https: data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src ipc: http://ipc.localhost https: http://127.0.0.1:1420"
     }
   },
-  "bundle": { "active": true, "targets": ["msi", "nsis", "deb", "rpm", "appimage"], "icon": [], "resources": ["resources/aria2c.exe", "resources/ca-certificates.crt"] }
+  "bundle": {
+    "active": true,
+    "targets": ["msi", "nsis", "deb", "rpm", "appimage"],
+    "icon": ["icons/icon.ico"],
+    "resources": ["resources/aria2c.exe", "resources/ca-certificates.crt"]
+  }
 }

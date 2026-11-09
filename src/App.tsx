@@ -52,10 +52,35 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [noticeError, setNoticeError] = useState(false);
+  const [updateBusy, setUpdateBusy] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState<{ status: 'idle' | 'current' | 'available' | 'error'; version?: string; url?: string; message?: string }>({ status: 'idle' });
 
   const notify = (message: string, error = false) => {
     setNotice(message); setNoticeError(error);
     window.setTimeout(() => setNotice(''), 4500);
+  };
+
+  const checkUpdates = async () => {
+    setUpdateBusy(true);
+    setUpdateInfo({ status: 'idle', message: 'Consultando as versões publicadas...' });
+    try {
+      const response = await fetch('https://api.github.com/repos/cassio-teles/vapora-launcher/releases/latest', { headers: { Accept: 'application/vnd.github+json' } });
+      if (response.status === 404) {
+        setUpdateInfo({ status: 'error', message: 'Ainda não há uma versão publicada na página de lançamentos do Vapora.' });
+        return;
+      }
+      if (!response.ok) throw new Error(`GitHub respondeu com HTTP ${response.status}`);
+      const release = await response.json() as { tag_name?: string; name?: string; html_url?: string; draft?: boolean; prerelease?: boolean };
+      const latest = (release.tag_name || release.name || '').replace(/^v/i, '').trim();
+      if (!latest) throw new Error('A versão publicada não informou um número válido.');
+      const currentParts = '0.4.0'.split('.').map(Number);
+      const latestParts = latest.split('.').map(Number);
+      const newer = latestParts.some((part, index) => part > (currentParts[index] || 0) && latestParts.slice(0, index).every((v, i) => v === (currentParts[i] || 0)));
+      if (newer && release.html_url) setUpdateInfo({ status: 'available', version: latest, url: release.html_url, message: `A versão ${latest} está disponível.` });
+      else setUpdateInfo({ status: 'current', version: latest, url: release.html_url, message: `Você está usando a versão 0.4.0. Última versão publicada: ${latest}.` });
+    } catch (error) {
+      setUpdateInfo({ status: 'error', message: `Não foi possível verificar atualizações: ${String(error)}` });
+    } finally { setUpdateBusy(false); }
   };
 
   const refresh = async () => {
@@ -202,7 +227,7 @@ export default function App() {
 
         {page === 'repositories' && <><div className="page-topline"><div><span className="kicker">VAPORA / FONTES</span><h1>Repositórios</h1><p>Conecte catálogos comunitários e escolha as fontes de cada jogo.</p></div><button className="primary-button" onClick={() => setModal('repo')}><Plus size={16}/> Adicionar repositório</button></div><div className="repo-intro"><ShieldCheck size={20}/><div><b>Você controla as fontes.</b><span>Adicione apenas repositórios que conhece. O Vapora não mantém nem recomenda listas de downloads de terceiros.</span></div></div><div className="repo-list">{repos.length ? repos.map(repo => <div className="repo-row" key={repo.id}><div className="repo-icon"><Database size={20}/></div><div className="repo-info"><b>{repo.name}</b><span>{repo.url}</span><small>{repo.last_sync ? `Última sincronização: ${repo.last_sync}` : 'Ainda não sincronizado'}</small></div><button className="outline-button" disabled={busy} onClick={() => void syncRepository(repo.id)}><RefreshCw size={14} className={busy ? 'spin-icon' : ''}/> Sincronizar</button><button className="icon-button danger" title="Remover repositório" onClick={async () => { if (confirm(`Remover ${repo.name} e os jogos deste catálogo?`)) { await invoke('remove_repository', { id: repo.id }); await refresh(); } }}><Trash2 size={17}/></button></div>) : <div className="empty-state compact"><Database size={28}/><b>Nenhum repositório conectado</b><span>Adicione uma URL de catálogo JSON para começar.</span></div>}</div></>}
 
-        {page === 'settings' && <><div className="page-topline"><div><span className="kicker">VAPORA / PREFERÊNCIAS</span><h1>Configurações</h1><p>Preferências e informações do aplicativo.</p></div></div><div className="settings-card"><div className="setting-row"><div><b>Armazenamento</b><span>Biblioteca e repositórios salvos localmente em SQLite.</span></div><em>Local</em></div><div className="setting-row"><div><b>Privacidade</b><span>Sem conta, perfil remoto, analytics ou servidor próprio.</span></div><em><ShieldCheck size={14}/> Ativo</em></div><div className="setting-row"><div><b>Plataformas</b><span>Windows e Linux desktop.</span></div><em><Monitor size={14}/> Multiplataforma</em></div><div className="setting-row"><div><b>Versão</b><span>Vapora Launcher — versão inicial de desenvolvimento.</span></div><em>0.3.0</em></div></div></>}
+        {page === 'settings' && <><div className="page-topline"><div><span className="kicker">VAPORA / PREFERÊNCIAS</span><h1>Configurações</h1><p>Preferências, atualizações e informações do aplicativo.</p></div></div><div className="settings-layout"><section className="settings-card"><div className="settings-section-title"><h2>Aplicativo</h2><span>Informações gerais</span></div><div className="setting-row"><div><b>Armazenamento</b><span>Biblioteca e repositórios salvos localmente em SQLite.</span></div><em>Local</em></div><div className="setting-row"><div><b>Privacidade</b><span>Sem conta, perfil remoto, analytics ou servidor próprio.</span></div><em><ShieldCheck size={14}/> Ativo</em></div><div className="setting-row"><div><b>Plataformas</b><span>Windows e Linux desktop.</span></div><em><Monitor size={14}/> Multiplataforma</em></div><div className="setting-row"><div><b>Versão instalada</b><span>Vapora Launcher</span></div><em>0.4.0</em></div></section><section className="update-card"><div className="update-heading"><div className="update-symbol"><RefreshCw size={22}/></div><div><h2>Atualizações</h2><p>Mantenha o Vapora na versão mais recente.</p></div></div><p className="update-description">Verifique se existe uma versão mais nova publicada no GitHub. Quando houver, você poderá abrir a página oficial para baixar o instalador.</p><button className="primary-button update-button" disabled={updateBusy} onClick={() => void checkUpdates()}><RefreshCw size={15} className={updateBusy ? 'spin-icon' : ''}/>{updateBusy ? 'Verificando...' : 'Verificar atualizações'}</button>{updateInfo.message && <div className={`update-result ${updateInfo.status}`}><span>{updateInfo.message}</span>{updateInfo.status === 'available' && updateInfo.url && <a href={updateInfo.url} target="_blank" rel="noreferrer">Abrir página da atualização <ChevronRight size={14}/></a>}</div>}<small>As atualizações são verificadas pela página oficial de lançamentos do projeto.</small></section></div></>}
       </main>
     </div>
     <footer className="app-footer"><span>VAPORA <i>•</i> LAUNCHER</span><span><span className="status-dot"/> {games.length} jogos na biblioteca <i>•</i> {repos.length} repositórios</span></footer>

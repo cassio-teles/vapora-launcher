@@ -219,11 +219,11 @@ export default function App() {
       </div>
     </div>
     <header className="topbar">
-      <button className="brand" aria-label="Vapora início" onClick={() => { setPage('store'); setSelected(null); }}>
+      <button className="brand" aria-label="Vapora início" onClick={() => { setPage('store'); setSelected(null); setSteamSelected(null); }}>
         <img className="brand-logo-image" src={vaporaLogo} alt="Vapora"/>
       </button>
       <nav className="client-nav" aria-label="Navegação principal">
-        {nav.map(item => { const Icon = item.icon; return <button key={item.id} className={`client-tab ${page === item.id ? 'active' : ''}`} onClick={() => { setPage(item.id); setSelected(null); }}><Icon size={15}/><span>{item.id === 'store' ? 'Loja' : item.label}</span>{item.id === 'downloads' && downloads.some(d => d.status === 'downloading') && <i className="nav-pulse"/>}</button>; })}
+        {nav.map(item => { const Icon = item.icon; return <button key={item.id} className={`client-tab ${page === item.id ? 'active' : ''}`} onClick={() => { setPage(item.id); setSelected(null); setSteamSelected(null); }}><Icon size={15}/><span>{item.id === 'store' ? 'Loja' : item.label}</span>{item.id === 'downloads' && downloads.some(d => d.status === 'downloading') && <i className="nav-pulse"/>}</button>; })}
       </nav>
       <div className="top-search"><Search size={16}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Buscar na loja e biblioteca" /></div>
       <div className="top-status"><span className="status-dot"/> <span>ONLINE LOCAL</span><span className="top-divider"/><span className="player-avatar">V</span><span>Jogador</span></div>
@@ -267,17 +267,18 @@ export default function App() {
             <div className="featured-heading"><h2>Destaques e recomendados</h2><span>LOJA STEAM • ATUALIZAÇÃO AUTOMÁTICA</span></div>
             <div className="featured-stage">
               <button className="featured-arrow previous" aria-label="Jogo anterior" onClick={() => setSteamFeaturedIndex(i => (i - 1 + steamFeatured.length) % steamFeatured.length)}><ChevronLeft size={30}/></button>
-              <a className="featured-art" href={'https://store.steampowered.com/app/' + steamSpotlight.appid + '/'} target="_blank" rel="noreferrer" style={{backgroundImage: 'url("' + steamSpotlight.header_image + '")'}} aria-label={'Abrir ' + steamSpotlight.name + ' na Steam'}/>
+              <button className="featured-art" onClick={() => showSteamGame(steamSpotlight)} style={{backgroundImage: 'url("' + steamSpotlight.header_image + '")'}} aria-label={'Ver detalhes de ' + steamSpotlight.name}/>
               <div className="featured-details"><h3>{steamSpotlight.name}</h3><p>Em destaque na loja Steam. Consulte a página oficial para detalhes e disponibilidade.</p>
                 <div className="featured-recommendation"><span>{steamSpotlight.discount_percent > 0 ? 'Oferta de ' + steamSpotlight.discount_percent + '%' : 'Destaque da loja'}</span><small>{steamSpotlight.final_price > 0 ? new Intl.NumberFormat('pt-BR',{style:'currency',currency:steamSpotlight.currency || 'BRL'}).format(steamSpotlight.final_price/100) : 'Consulte o preço na Steam'}</small></div>
-                <a className="featured-view" href={'https://store.steampowered.com/app/' + steamSpotlight.appid + '/'} target="_blank" rel="noreferrer">Ver na Steam <ChevronRight size={15}/></a></div>
+                <button className="featured-view" onClick={() => showSteamGame(steamSpotlight)}>Ver página do jogo <ChevronRight size={15}/></button></div>
               <button className="featured-arrow next" aria-label="Próximo jogo" onClick={() => setSteamFeaturedIndex(i => (i + 1) % steamFeatured.length)}><ChevronRight size={30}/></button>
             </div><div className="featured-pagination">{steamFeatured.slice(0,12).map((game,i)=><button key={game.appid} aria-label={'Mostrar ' + game.name} className={i===steamFeaturedIndex?'active':''} onClick={()=>setSteamFeaturedIndex(i)}/>)}</div>
           </section>}
           <div className="section-heading" id="store-catalog"><div><span className="kicker">LOJA VAPORA</span><h2>Jogos para explorar</h2><p>{catalog.length} jogos importados dos seus repositórios</p></div><button className="text-button" onClick={() => setPage('repositories')}>Gerenciar fontes <ChevronRight size={15}/></button></div>
-          {filteredCatalog.length ? <div className="store-grid">{filteredCatalog.map(game => <GameTile key={game.id} game={game} onClick={() => showGame(game)} onDownload={() => void openSources(game)}/>)}</div> : steamFeatured.length ? <div className="store-grid steam-store-grid">{steamFeatured.slice(0,12).map(game => <a className="steam-store-card" key={game.appid} href={'https://store.steampowered.com/app/' + game.appid + '/'} target="_blank" rel="noreferrer"><img src={game.header_image} alt="" loading="lazy"/><b>{game.name}</b><span>{game.discount_percent > 0 ? '-' + game.discount_percent + '% na Steam' : 'Ver na loja Steam'}</span></a>)}</div> : <div className="empty-state"><LayoutGrid size={30}/><b>Não foi possível carregar a vitrine</b><span>{steamStoreError || 'A Steam não retornou destaques no momento.'}</span><button className="outline-button" onClick={() => invoke<StoreFeaturedGame[]>('fetch_store_featured').then(setSteamFeatured).catch(e=>setSteamStoreError(String(e)))}>Tentar novamente</button></div>}
+          {filteredCatalog.length ? <div className="store-grid">{filteredCatalog.map(game => <GameTile key={game.id} game={game} onClick={() => showGame(game)} onDownload={() => void openSources(game)}/>)}</div> : steamFeatured.length ? <div className="store-grid steam-store-grid">{steamFeatured.slice(0,12).map(game => <button className="steam-store-card" key={game.appid} onClick={() => showSteamGame(game)}><img src={game.header_image} alt="" loading="lazy"/><b>{game.name}</b><span>{game.discount_percent > 0 ? '-' + game.discount_percent + '% na Steam' : 'Ver detalhes'}</span></button>)}</div> : <div className="empty-state"><LayoutGrid size={30}/><b>Não foi possível carregar a vitrine</b><span>{steamStoreError || 'A Steam não retornou destaques no momento.'}</span><button className="outline-button" onClick={() => invoke<StoreFeaturedGame[]>('fetch_store_featured').then(setSteamFeatured).catch(e=>setSteamStoreError(String(e)))}>Tentar novamente</button></div>}
         </>}
 
+        {page === 'store' && steamSelected && <SteamGameDetail game={steamSelected} owned={ownedSteamIds.includes(steamSelected.appid)} onAcquire={() => acquireSteamGame(steamSelected)} onRepository={() => void openSteamRepositorySources(steamSelected)} onBack={() => setSteamSelected(null)} />}
         {page === 'store' && selected && <>
           <button className="back-link" onClick={() => setSelected(null)}>‹ Voltar para explorar</button>
           <section className="game-detail-hero" style={selected.cover ? { backgroundImage: `linear-gradient(90deg, #0a1119 0%, #0a1119ed 38%, #0a111980 72%, #0a111955 100%), url("${selected.cover}")` } : undefined}>

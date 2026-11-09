@@ -212,11 +212,11 @@ export default function App() {
 
   return <div className="app-shell">
     <div className="window-chrome" data-tauri-drag-region>
-      <div className="chrome-brand" data-tauri-drag-region><img className="chrome-logo-image" src={vaporaLogo} alt="Vapora" data-tauri-drag-region/><span className="chrome-menu" data-tauri-drag-region>Arquivo&nbsp;&nbsp; Exibir&nbsp;&nbsp; Jogos&nbsp;&nbsp; Ajuda</span></div>
+      <div className="chrome-brand" data-tauri-drag-region onMouseDown={(event) => { if (event.button === 0) void appWindow.startDragging(); }}><img className="chrome-logo-image" src={vaporaLogo} alt="Vapora" data-tauri-drag-region/><span className="chrome-menu" data-tauri-drag-region>Arquivo&nbsp;&nbsp; Exibir&nbsp;&nbsp; Jogos&nbsp;&nbsp; Ajuda</span></div>
       <div className="window-controls">
         <button aria-label="Minimizar" onClick={() => void appWindow.minimize()}><Minus size={13}/></button>
         <button aria-label="Maximizar" onClick={() => void appWindow.toggleMaximize()}><Square size={11}/></button>
-        <button className="close-window" aria-label="Fechar" onClick={() => void appWindow.close()}><X size={15}/></button>
+        <button className="close-window" aria-label="Fechar" title="Fechar Vapora" onClick={async () => { try { await appWindow.close(); } catch (error) { notify(`Não foi possível fechar a janela: ${String(error)}`, true); } }}><X size={15}/></button>
       </div>
     </div>
     <header className="topbar">

@@ -338,7 +338,7 @@ function SteamGameDetail({ game, owned, onAcquire, onRepository, onBack }: {
       <div><span className="kicker">VAPORA / LOJA STEAM</span><h1>{details?.name || game.name}</h1>
         <p>{(details?.developers || []).join(', ') || 'Informações oficiais da Steam'}</p>
         <div className="detail-buttons">
-          {owned ? <a className="primary-button" href={'steam://install/' + game.appid}><Download size={16}/> Baixar</a> : <button className="primary-button" onClick={onAcquire}><Plus size={16}/> Adicionar à biblioteca</button>}
+          {owned ? <button className="primary-button" onClick={() => invoke('open_steam_install', { appid: game.appid }).catch(error => setSteamActionError(String(error)))}><Download size={16}/> Baixar</button> : <button className="primary-button" onClick={onAcquire}><Plus size={16}/> Adicionar à biblioteca</button>}
           <button className="ghost-button" onClick={() => invoke('open_steam_store', { appid: game.appid }).catch(error => setSteamActionError(String(error)))}>Adquirir na Steam <ChevronRight size={15}/></button>
         </div>
       </div>

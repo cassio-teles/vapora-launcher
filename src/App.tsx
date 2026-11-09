@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { open } from '@tauri-apps/plugin-dialog';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import vaporaLogo from './assets/Logo Gamer Vaporoso Vapora feito em.png';
 import {
   Gamepad2, Compass, Library, Download, Settings, Plus, Search, Folder,
   Play, Trash2, RefreshCw, ChevronRight, ChevronLeft, ShieldCheck, Monitor, Minus, Square,
@@ -205,7 +206,7 @@ export default function App() {
 
   return <div className="app-shell">
     <div className="window-chrome" data-tauri-drag-region onMouseDown={e => { if (e.buttons === 1 && !(e.target as HTMLElement).closest('.window-controls')) { e.preventDefault(); void appWindow.startDragging(); } }}>
-      <div className="chrome-brand" data-tauri-drag-region><span className="chrome-mark" data-tauri-drag-region>V</span><span data-tauri-drag-region>Vapora</span><span className="chrome-menu" data-tauri-drag-region>Arquivo&nbsp;&nbsp; Exibir&nbsp;&nbsp; Jogos&nbsp;&nbsp; Ajuda</span></div>
+      <div className="chrome-brand" data-tauri-drag-region><img className="chrome-logo-image" src={vaporaLogo} alt="Vapora" data-tauri-drag-region/><span className="chrome-menu" data-tauri-drag-region>Arquivo&nbsp;&nbsp; Exibir&nbsp;&nbsp; Jogos&nbsp;&nbsp; Ajuda</span></div>
       <div className="window-controls">
         <button aria-label="Minimizar" onClick={() => void appWindow.minimize()}><Minus size={13}/></button>
         <button aria-label="Maximizar" onClick={() => void appWindow.toggleMaximize()}><Square size={11}/></button>
@@ -214,7 +215,7 @@ export default function App() {
     </div>
     <header className="topbar">
       <button className="brand" aria-label="Vapora início" onClick={() => { setPage('store'); setSelected(null); }}>
-        <span className="brand-mark"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M9 13.5 23.8 24M38.5 12.5 24 24M24 24l1 16" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round"/><circle cx="9" cy="12" r="6.5" fill="currentColor"/><circle cx="39" cy="11" r="6.5" fill="currentColor"/><circle cx="25" cy="40" r="6.5" fill="currentColor"/><circle cx="24" cy="24" r="7.2" fill="#17212b" stroke="currentColor" strokeWidth="3"/></svg></span><span className="brand-word">VAPORA</span>
+        <img className="brand-logo-image" src={vaporaLogo} alt="Vapora"/>
       </button>
       <nav className="client-nav" aria-label="Navegação principal">
         {nav.map(item => { const Icon = item.icon; return <button key={item.id} className={`client-tab ${page === item.id ? 'active' : ''}`} onClick={() => { setPage(item.id); setSelected(null); }}><Icon size={15}/><span>{item.id === 'store' ? 'Loja' : item.label}</span>{item.id === 'downloads' && downloads.some(d => d.status === 'downloading') && <i className="nav-pulse"/>}</button>; })}

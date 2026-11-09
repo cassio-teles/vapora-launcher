@@ -71,6 +71,28 @@ async fn fetch_store_featured() -> Result<Vec<StoreFeaturedGame>, String> {
     if games.is_empty() { return Err("A Steam não retornou jogos em destaque. Tente novamente mais tarde.".into()); }
     Ok(games)
 }
+
+#[tauri::command]
+async fn fetch_steam_game_details(appid: u64) -> Result<serde_json::Value, String> {
+    let url = format!("https://store.steampowered.com/api/appdetails?appids={appid}&cc=br&l=brazilian");
+    let client = reqwest::Client::builder().user_agent("Vapora/0.8 desktop storefront").build().map_err(|e| e.to_string())?;
+    let response = client.get(url).send().await.map_err(|e| format!("Falha ao consultar detalhes do jogo: {e}"))?.error_for_status().map_err(|e| e.to_string())?;
+    let payload: serde_json::Value = response.json().await.map_err(|e| format!("Resposta de detalhes inválida: {e}"))?;
+    let key = appid.to_string();
+    let entry = payload.get(&key).ok_or("A Steam não retornou este jogo")?;
+    if entry.get("success").and_then(|v| v.as_bool()) != Some(true) { return Err("Detalhes indisponíveis para este jogo na Steam".into()); }
+    entry.get("data").cloned().ok_or_else(|| "A Steam retornou detalhes vazios".into())
+}
+
+#[tauri::command]
+async fn fetch_steam_game_reviews(appid: u64) -> Result<Vec<serde_json::Value>, String> {
+    let url = format!("https://store.steampowered.com/appreviews/{appid}?json=1&language=all&num_per_page=10&purchase_type=all");
+    let client = reqwest::Client::builder().user_agent("Vapora/0.8 desktop storefront").build().map_err(|e| e.to_string())?;
+    let response = client.get(url).send().await.map_err(|e| format!("Falha ao consultar avaliações: {e}"))?.error_for_status().map_err(|e| e.to_string())?;
+    let payload: serde_json::Value = response.json().await.map_err(|e| format!("Resposta de avaliações inválida: {e}"))?;
+    Ok(payload.get("reviews").and_then(|v| v.as_array()).cloned().unwrap_or_default())
+}
+
 #[derive(Debug, Deserialize)]
 struct Catalog { games: Vec<CatalogGame> }
 
@@ -452,7 +474,7 @@ fn reveal_path(path: String) -> Result<(), String> {
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![list_games,list_catalog_games,add_game,remove_game,list_repositories,add_repository,sync_repository,remove_repository,list_game_sources,download_game_source,extract_zip,launch_game,reveal_path])
+        .invoke_handler(tauri::generate_handler![fetch_steam_game_details,fetch_steam_game_reviews,list_games,list_catalog_games,add_game,remove_game,list_repositories,add_repository,sync_repository,remove_repository,list_game_sources,download_game_source,extract_zip,launch_game,reveal_path])
         .run(tauri::generate_context!())
         .expect("error while running Vapora");
 }

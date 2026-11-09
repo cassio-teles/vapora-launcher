@@ -546,3 +546,47 @@ body{min-width:900px;min-height:650px;background:var(--steam-deep)}
 .brand-logo-image{display:block;width:188px;height:54px;object-fit:contain;object-position:left center}
 .brand:hover{filter:brightness(1.08)}
 @media(max-width:760px){.brand-logo-image{width:145px;height:46px}.chrome-logo-image{width:90px;height:23px}}
+
+
+/* Vapora 0.8 — functional native titlebar and Steam detail pages */
+.window-chrome{touch-action:auto;cursor:move;-webkit-user-select:none;user-select:none}
+.window-chrome [data-tauri-drag-region]{cursor:move;user-select:none}
+.window-controls,.window-controls button{position:relative;z-index:10;-webkit-app-region:no-drag}
+.chrome-logo-image,.brand-logo-image{mix-blend-mode:screen}
+.steam-store-card{appearance:none;width:100%;text-align:left;cursor:pointer;font:inherit;border-radius:2px}
+.steam-game-page{max-width:1280px;margin:0 auto;padding-bottom:35px}
+.steam-game-banner{min-height:330px;display:flex;align-items:flex-end;padding:34px 40px;background-color:#101923;background-position:center;background-size:cover;border:1px solid #30475b;box-shadow:0 12px 32px #0005}
+.steam-game-banner>div{max-width:650px}
+.steam-game-banner h1{margin:10px 0;font-size:34px;color:#f2f7fb;font-weight:650}
+.steam-game-banner p{color:#b7c9d7;font-size:13px}
+.steam-game-banner .detail-buttons{display:flex;gap:10px;align-items:center;margin-top:20px}
+.steam-game-banner .detail-buttons a{display:inline-flex;align-items:center;gap:8px;text-decoration:none}
+.steam-loading{display:flex;align-items:center;gap:10px;margin:18px 0;padding:15px;background:#1b2b3a;border:1px solid #344d62;color:#b9cbd8;font-size:12px}
+.steam-detail-layout{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:22px;margin-top:22px}
+.steam-detail-content{min-width:0}
+.steam-detail-section{margin-bottom:22px;padding:22px;background:#1b2b3a;border:1px solid #344d62}
+.steam-detail-section h2{margin:0 0 13px;color:#e8f2fa;font-size:18px}
+.steam-detail-section>p{color:#b9c9d5;font-size:12px;line-height:1.75}
+.steam-video-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.steam-video-grid video{width:100%;background:#080d13;aspect-ratio:16/9}
+.steam-screenshot-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.steam-screenshot-grid img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#0d151e}
+.steam-detail-facts{align-self:start;padding:20px;background:#1b2b3a;border:1px solid #344d62}
+.steam-detail-facts>div{display:flex;flex-direction:column;gap:5px;padding:13px 0;border-bottom:1px solid #344d62}
+.steam-detail-facts small{color:#8fa7ba;font-size:10px}
+.steam-detail-facts b{color:#dce8f1;font-size:11px;line-height:1.5}
+.steam-community .community-note{color:#8fa7ba;font-size:10px}
+.steam-review{padding:15px 0;border-top:1px solid #344d62}
+.steam-review>div{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.steam-review b{color:#e1edf6;font-size:12px}
+.steam-review span{font-size:10px;font-weight:700}
+.steam-review .review-up{color:#9acb5b}.steam-review .review-down{color:#e18d83}
+.steam-review p{color:#c2d0da;font-size:11px;line-height:1.65;white-space:pre-wrap}
+.steam-review small{color:#8298aa;font-size:9px}
+.steam-source-choices{margin-top:17px;padding-top:14px;border-top:1px solid #344d62}
+.steam-source-choices h3{font-size:12px;color:#eaf4fb}
+.steam-source-choices a,.steam-source-choices button{display:flex;align-items:center;gap:8px;width:100%;margin:8px 0;padding:10px;border:1px solid #42617a;background:#263f54;color:#dcecf7;text-decoration:none;text-align:left;font-size:11px;cursor:pointer}
+.steam-source-choices a:hover,.steam-source-choices button:hover{background:#345b79}
+.steam-source-choices small{display:block;color:#8fa7ba;font-size:9px;line-height:1.5}
+@media(max-width:900px){.steam-detail-layout{grid-template-columns:1fr}.steam-detail-facts{order:-1}}
+@media(max-width:620px){.steam-game-banner{min-height:260px;padding:22px}.steam-game-banner h1{font-size:25px}.steam-video-grid,.steam-screenshot-grid{grid-template-columns:1fr}.steam-detail-section{padding:15px}}

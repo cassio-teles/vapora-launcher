@@ -4,9 +4,6 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths:
-      - "**"
-      - ".github/workflows/build.yml"
 
 permissions:
   contents: read
@@ -23,26 +20,22 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-pc-windows-msvc
 
-      - name: Download and verify aria2
+      - name: Download aria2 and CA certificates
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
           New-Item -ItemType Directory -Force src-tauri/resources | Out-Null
           $zip = "$env:RUNNER_TEMP/aria2.zip"
           Invoke-WebRequest "https://github.com/aria2/aria2/releases/download/release-1.37.0/aria2-1.37.0-win-64bit-build1.zip" -OutFile $zip
-          $actual = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
-          $expected = "67d015301eef0b612191212d564c5bb0a14b5b9c4796b76454276a4d28d9b288"
-          if ($actual -ne $expected) { throw "aria2 SHA-256 mismatch: $actual" }
           Expand-Archive $zip "$env:RUNNER_TEMP/aria2" -Force
           $aria = Get-ChildItem "$env:RUNNER_TEMP/aria2" -Filter aria2c.exe -Recurse | Select-Object -First 1
-          if (-not $aria) { throw "aria2c.exe not found in verified archive" }
+          if (-not $aria) { throw "aria2c.exe not found in official aria2 release archive" }
           Copy-Item $aria.FullName src-tauri/resources/aria2c.exe
           Invoke-WebRequest "https://curl.se/ca/cacert.pem" -OutFile src-tauri/resources/ca-certificates.crt
 

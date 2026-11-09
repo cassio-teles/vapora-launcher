@@ -49,6 +49,8 @@ export default function App() {
   const [catalog, setCatalog] = useState<Game[]>([]);
   const [repos, setRepos] = useState<Repo[]>([]);
   const [selected, setSelected] = useState<Game | null>(null);
+  const [steamSelected, setSteamSelected] = useState<StoreFeaturedGame | null>(null);
+  const [ownedSteamIds, setOwnedSteamIds] = useState<number[]>(() => { try { return JSON.parse(localStorage.getItem('vapora-owned-steam-games') || '[]') as number[]; } catch { return []; } });
   const [sources, setSources] = useState<DownloadSource[]>([]);
   const [downloads, setDownloads] = useState<DownloadItem[]>([]);
   const [query, setQuery] = useState('');
@@ -136,6 +138,9 @@ export default function App() {
   }, [catalog.length]);
 
   const showGame = (game: Game) => { setSelected(game); setPage('store'); };
+  const showSteamGame = (game: StoreFeaturedGame) => { setSelected(null); setSteamSelected(game); setPage('store'); };
+  const acquireSteamGame = (game: StoreFeaturedGame) => { const next = Array.from(new Set([...ownedSteamIds, game.appid])); setOwnedSteamIds(next); localStorage.setItem('vapora-owned-steam-games', JSON.stringify(next)); notify('Jogo adicionado à biblioteca do Vapora. A licença na Steam é independente.'); };
+  const openSteamRepositorySources = async (game: StoreFeaturedGame) => { const match = catalog.find(item => item.title.toLowerCase() === game.name.toLowerCase()); if (!match) return notify('Nenhum repositório conectado oferece uma fonte para este jogo.', true); setSteamSelected(null); await openSources(match); };
   const openSources = async (game: Game) => {
     setSelected(game);
     try {

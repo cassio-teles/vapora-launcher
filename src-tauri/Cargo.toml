@@ -1,6 +1,6 @@
 [package]
 name = "vapora"
-version = "0.3.0"
+version = "0.8.0"
 description = "Vapora game launcher"
 authors = ["Vapora contributors"]
 edition = "2021"

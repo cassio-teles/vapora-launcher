@@ -45,6 +45,32 @@ struct DownloadSource {
     sha256: Option<String>,
 }
 
+#[derive(Debug, Serialize)]
+struct StoreFeaturedGame { appid: u64, name: String, header_image: String, discount_percent: u64, final_price: u64, currency: String }
+
+#[tauri::command]
+async fn fetch_store_featured() -> Result<Vec<StoreFeaturedGame>, String> {
+    let client = reqwest::Client::builder().user_agent("Vapora/0.7 desktop storefront").build().map_err(|e| e.to_string())?;
+    let response = client.get("https://store.steampowered.com/api/featuredcategories/?cc=br&l=portuguese").send().await.map_err(|e| format!("Não foi possível consultar a loja Steam: {e}"))?.error_for_status().map_err(|e| format!("A loja Steam respondeu com erro: {e}"))?;
+    let data: serde_json::Value = response.json().await.map_err(|e| format!("Resposta da loja Steam inválida: {e}"))?;
+    let currency = data.get("currency").and_then(|v| v.as_str()).unwrap_or("BRL").to_string();
+    let mut games = Vec::new(); let mut seen = std::collections::HashSet::new();
+    for category in ["specials", "top_sellers", "new_releases", "coming_soon"] {
+        if let Some(items) = data.get(category).and_then(|v| v.get("items")).and_then(|v| v.as_array()) {
+            for item in items {
+                let Some(appid) = item.get("id").and_then(|v| v.as_u64()) else { continue; };
+                let Some(name) = item.get("name").and_then(|v| v.as_str()) else { continue; };
+                let image = item.get("header_image").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                if image.is_empty() || !seen.insert(appid) { continue; }
+                games.push(StoreFeaturedGame { appid, name: name.to_string(), header_image: image, discount_percent: item.get("discount_percent").and_then(|v| v.as_u64()).unwrap_or(0), final_price: item.get("final_price").and_then(|v| v.as_u64()).unwrap_or(0), currency: currency.clone() });
+                if games.len() >= 24 { break; }
+            }
+        }
+        if games.len() >= 24 { break; }
+    }
+    if games.is_empty() { return Err("A Steam não retornou jogos em destaque. Tente novamente mais tarde.".into()); }
+    Ok(games)
+}
 #[derive(Debug, Deserialize)]
 struct Catalog { games: Vec<CatalogGame> }
 

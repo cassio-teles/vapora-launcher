@@ -189,17 +189,22 @@ export default function App() {
 
   return <div className="app-shell">
     <header className="topbar">
-      <button className="brand" onClick={() => { setPage('store'); setSelected(null); }}><span className="brand-mark"><Gamepad2 size={23}/></span><span>vapora</span></button>
-      <div className="top-search"><Search size={16}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Pesquisar jogos e biblioteca" /></div>
-      <div className="top-status"><span className="status-dot"/> Modo local <span className="top-divider"/> <span className="player-avatar">P</span><span>Jogador</span></div>
+      <button className="brand" aria-label="Vapora início" onClick={() => { setPage('store'); setSelected(null); }}>
+        <span className="brand-mark"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M9 13.5 23.8 24M38.5 12.5 24 24M24 24l1 16" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round"/><circle cx="9" cy="12" r="6.5" fill="currentColor"/><circle cx="39" cy="11" r="6.5" fill="currentColor"/><circle cx="25" cy="40" r="6.5" fill="currentColor"/><circle cx="24" cy="24" r="7.2" fill="#17212b" stroke="currentColor" strokeWidth="3"/><path d="M18 6c-3-4 2-5 0-8M28 5c-2-4 3-5 1-8" transform="translate(0 5)" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/></svg></span><span className="brand-word">VAPORA</span>
+      </button>
+      <nav className="client-nav" aria-label="Navegação principal">
+        {nav.map(item => { const Icon = item.icon; return <button key={item.id} className={`client-tab ${page === item.id ? 'active' : ''}`} onClick={() => { setPage(item.id); setSelected(null); }}><Icon size={15}/><span>{item.label}</span>{item.id === 'downloads' && downloads.some(d => d.status === 'downloading') && <i className="nav-pulse"/>}</button>; })}
+      </nav>
+      <div className="top-search"><Search size={16}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Buscar na biblioteca" /></div>
+      <div className="top-status"><span className="status-dot"/> <span>LOCAL</span><span className="top-divider"/><span className="player-avatar">V</span></div>
     </header>
     <div className="app-body">
       <aside className="sidebar">
-        <div className="side-label">MENU PRINCIPAL</div>
-        {nav.map(item => { const Icon = item.icon; return <button key={item.id} className={`nav-link ${page === item.id ? 'active' : ''}`} onClick={() => { setPage(item.id); setSelected(null); }}><Icon size={18}/><span>{item.label}</span>{item.id === 'downloads' && downloads.some(d => d.status === 'downloading') && <i className="nav-pulse"/>}</button>; })}
-        <div className="side-label library-label">SUA COLEÇÃO <button title="Adicionar jogo" onClick={() => setModal('local')}><Plus size={15}/></button></div>
-        <div className="sidebar-games">{games.slice(0, 9).map(game => <button key={game.id} onClick={() => showGame(game)}><span className="mini-cover" style={game.cover ? { backgroundImage: `url(${game.cover})` } : undefined}>{!game.cover && game.title[0]}</span><span>{game.title}</span></button>)}</div>
-        <div className="sidebar-bottom"><ShieldCheck size={15}/><span>Seus dados ficam no dispositivo</span></div>
+        <div className="side-heading"><span>BIBLIOTECA</span><button title="Adicionar jogo" onClick={() => setModal('local')}><Plus size={15}/></button></div>
+        <button className={`collection-filter ${page === 'library' ? 'active' : ''}`} onClick={() => { setPage('library'); setSelected(null); }}><Library size={15}/> Todos os jogos <span>{games.length}</span></button>
+        <div className="side-label library-label">SUA COLEÇÃO</div>
+        <div className="sidebar-games">{games.map(game => <button key={game.id} className={selected?.id === game.id ? 'selected' : ''} onClick={() => showGame(game)}><span className="mini-cover" style={game.cover ? { backgroundImage: `url(${game.cover})` } : undefined}>{!game.cover && game.title[0]}</span><span>{game.title}</span></button>)}</div>
+        <div className="sidebar-bottom"><ShieldCheck size={15}/><span>Biblioteca local • seus dados ficam neste dispositivo</span></div>
       </aside>
 
       <main className="main-content">

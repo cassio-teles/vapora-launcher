@@ -36,6 +36,7 @@
       "appimage"
     ],
     "icon": [
+      "icons/icon.ico",
       "icons/vapora.png"
     ],
     "resources": [

@@ -42,13 +42,8 @@ jobs:
       - name: Install frontend dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Prepare Vapora logo as application icon
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = "Stop"
-          New-Item -ItemType Directory -Force src-tauri/icons | Out-Null
-          Copy-Item "src/assets/Logo Gamer Vaporoso Vapora feito em.png" "src-tauri/icons/vapora.png"
-          if (-not (Test-Path src-tauri/icons/vapora.png)) { throw "Vapora logo PNG was not copied" }
+      - name: Generate all Windows application icons from Vapora logo
+        run: npx tauri icon "src/assets/Logo Gamer Vaporoso Vapora feito em.png" --output src-tauri/icons
 
       - name: Build Windows installers
         run: npm run tauri build -- --bundles nsis,msi

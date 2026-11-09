@@ -36,7 +36,7 @@
       "appimage"
     ],
     "icon": [
-      "icons/icon.ico"
+      "icons/vapora.png"
     ],
     "resources": [
       "resources/aria2c.exe",

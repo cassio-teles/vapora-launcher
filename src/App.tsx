@@ -15,6 +15,7 @@ type Game = {
   source: string; added_at: string; is_catalog: boolean;
 };
 type Repo = { id: number; name: string; url: string; enabled: boolean; last_sync: string | null };
+type StoreFeaturedGame = { appid: number; name: string; header_image: string; discount_percent: number; final_price: number; currency: string };
 type DownloadSource = {
   id: number; game_id: number; repository_id: number; repository_name: string;
   name: string; url: string; kind: string; size: string | null; sha256: string | null;
@@ -39,6 +40,9 @@ const appWindow = getCurrentWindow();
 export default function App() {
   const [page, setPage] = useState<Page>('store');
   const [featuredIndex, setFeaturedIndex] = useState(0);
+  const [steamFeatured, setSteamFeatured] = useState<StoreFeaturedGame[]>([]);
+  const [steamFeaturedIndex, setSteamFeaturedIndex] = useState(0);
+  const [steamStoreError, setSteamStoreError] = useState('');
   const [storeCategory, setStoreCategory] = useState('Destaques');
   const [games, setGames] = useState<Game[]>([]);
   const [catalog, setCatalog] = useState<Game[]>([]);
@@ -101,7 +105,7 @@ export default function App() {
     } catch (error) { notify(String(error), true); }
   };
 
-  useEffect(() => { void refresh(); }, []);
+  useEffect(() => { void refresh(); invoke<StoreFeaturedGame[]>('fetch_store_featured').then(setSteamFeatured).catch(error => setSteamStoreError(String(error))); }, []);
   useEffect(() => {
     let unlisten: (() => void) | undefined;
     listen<DownloadEvent>('download-progress', event => {
@@ -122,6 +126,8 @@ export default function App() {
   const filteredLibrary = useMemo(() => games.filter(g =>
     `${g.title} ${g.developer}`.toLowerCase().includes(query.toLowerCase())), [games, query]);
   const featured = catalog.length ? catalog[featuredIndex % catalog.length] : undefined;
+  const steamSpotlight = steamFeatured.length ? steamFeatured[steamFeaturedIndex % steamFeatured.length] : undefined;
+  useEffect(() => { if (catalog.length > 1 || steamFeatured.length < 2) return; const timer = window.setInterval(() => setSteamFeaturedIndex(i => (i + 1) % steamFeatured.length), 7000); return () => window.clearInterval(timer); }, [catalog.length, steamFeatured.length]);
   useEffect(() => {
     if (catalog.length < 2) return;
     const timer = window.setInterval(() => setFeaturedIndex(index => (index + 1) % catalog.length), 6500);
@@ -198,8 +204,8 @@ export default function App() {
   ];
 
   return <div className="app-shell">
-    <div className="window-chrome" data-tauri-drag-region onMouseDown={e => { if (e.buttons === 1 && !(e.target as HTMLElement).closest('button')) void appWindow.startDragging(); }}>
-      <div className="chrome-brand"><span className="chrome-mark">V</span><span>Vapora</span><span className="chrome-menu">Arquivo&nbsp;&nbsp; Exibir&nbsp;&nbsp; Jogos&nbsp;&nbsp; Ajuda</span></div>
+    <div className="window-chrome" data-tauri-drag-region onMouseDown={e => { if (e.buttons === 1 && !(e.target as HTMLElement).closest('.window-controls')) { e.preventDefault(); void appWindow.startDragging(); } }}>
+      <div className="chrome-brand" data-tauri-drag-region><span className="chrome-mark" data-tauri-drag-region>V</span><span data-tauri-drag-region>Vapora</span><span className="chrome-menu" data-tauri-drag-region>Arquivo&nbsp;&nbsp; Exibir&nbsp;&nbsp; Jogos&nbsp;&nbsp; Ajuda</span></div>
       <div className="window-controls">
         <button aria-label="Minimizar" onClick={() => void appWindow.minimize()}><Minus size={13}/></button>
         <button aria-label="Maximizar" onClick={() => void appWindow.toggleMaximize()}><Square size={11}/></button>
@@ -223,15 +229,15 @@ export default function App() {
       <div className="store-toolbar-right"><button onClick={() => setPage('repositories')}>Suas fontes</button><button onClick={() => setModal('repo')}>＋ Adicionar catálogo</button></div>
     </div>}
     <div className="app-body">
-      <aside className="sidebar">
+      {page !== 'store' && <aside className="sidebar">
         <div className="side-heading"><span>BIBLIOTECA</span><button title="Adicionar jogo" onClick={() => setModal('local')}><Plus size={15}/></button></div>
         <button className={`collection-filter ${page === 'library' ? 'active' : ''}`} onClick={() => { setPage('library'); setSelected(null); }}><Library size={15}/> Todos os jogos <span>{games.length}</span></button>
         <div className="side-label library-label">SUA COLEÇÃO</div>
         <div className="sidebar-games">{games.map(game => <button key={game.id} className={selected?.id === game.id ? 'selected' : ''} onClick={() => showGame(game)}><span className="mini-cover" style={game.cover ? { backgroundImage: `url(${game.cover})` } : undefined}>{!game.cover && game.title[0]}</span><span>{game.title}</span></button>)}</div>
         <div className="sidebar-bottom"><ShieldCheck size={15}/><span>Biblioteca local • seus dados ficam neste dispositivo</span></div>
-      </aside>
+      </aside>}
 
-      <main className="main-content">
+      <main className={`main-content ${page === 'store' ? 'store-full-width' : ''}`}>
         {page === 'store' && !selected && <>
           <div className="page-topline"><div><span className="kicker">VAPORA / DESCOBERTA</span><h1>Descubra seu próximo jogo.</h1><p>Explore os catálogos que você escolheu adicionar.</p></div><button className="subtle-button" onClick={() => setModal('repo')}><Plus size={16}/> Adicionar repositório</button></div>
           {featured ? <section className="steam-featured" id="store-featured">

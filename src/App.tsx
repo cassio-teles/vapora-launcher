@@ -85,7 +85,7 @@ export default function App() {
       const release = await response.json() as { tag_name?: string; name?: string; html_url?: string; draft?: boolean; prerelease?: boolean };
       const latest = (release.tag_name || release.name || '').replace(/^v/i, '').trim();
       if (!latest) throw new Error('A versão publicada não informou um número válido.');
-      const currentParts = '0.8.0'.split('.'.map(Number);
+      const currentParts = '0.8.0'.split('.').map(Number);
       const latestParts = latest.split('.').map(Number);
       const newer = latestParts.some((part, index) => part > (currentParts[index] || 0) && latestParts.slice(0, index).every((v, i) => v === (currentParts[i] || 0)));
       if (newer && release.html_url) setUpdateInfo({ status: 'available', version: latest, url: release.html_url, message: `A versão ${latest} está disponível.` });
@@ -137,7 +137,7 @@ export default function App() {
     return () => window.clearInterval(timer);
   }, [catalog.length]);
 
-  const showGame = (game: Game) => { setSelected(game); setPage('store'); };
+  const showGame = (game: Game) => { setSteamSelected(null); setSelected(game); setPage('store'); };
   const showSteamGame = (game: StoreFeaturedGame) => { setSelected(null); setSteamSelected(game); setPage('store'); };
   const acquireSteamGame = (game: StoreFeaturedGame) => { const next = Array.from(new Set([...ownedSteamIds, game.appid])); setOwnedSteamIds(next); localStorage.setItem('vapora-owned-steam-games', JSON.stringify(next)); notify('Jogo adicionado à biblioteca do Vapora. A licença na Steam é independente.'); };
   const openSteamRepositorySources = async (game: StoreFeaturedGame) => { const match = catalog.find(item => item.title.toLowerCase() === game.name.toLowerCase()); if (!match) return notify('Nenhum repositório conectado oferece uma fonte para este jogo.', true); setSteamSelected(null); await openSources(match); };

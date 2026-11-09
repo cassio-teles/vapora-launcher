@@ -324,13 +324,9 @@ function SteamGameDetail({ game, owned, onAcquire, onRepository, onBack }: {
     let active = true;
     setLoading(true); setDetailError('');
     Promise.all([
-      invoke<any>('fetch_steam_game_details', { appid: game.appid }),
-      invoke<any[]>('fetch_steam_game_reviews', { appid: game.appid })
-    ]).then(([data, ratings]) => {
-      if (!active) return;
-      setDetails(data); setReviews(ratings);
-    }).catch(error => { if (active) setDetailError(String(error)); })
-      .finally(() => { if (active) setLoading(false); });
+      invoke<any>('fetch_steam_game_details', { appid: game.appid }).then(data => { if (active) setDetails(data); }).catch(error => { if (active) setDetailError('Detalhes: ' + String(error)); }),
+      invoke<any[]>('fetch_steam_game_reviews', { appid: game.appid }).then(ratings => { if (active) setReviews(ratings); }).catch(() => { if (active) setReviews([]); })
+    ]).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [game.appid]);
   const screenshots = details?.screenshots || [];

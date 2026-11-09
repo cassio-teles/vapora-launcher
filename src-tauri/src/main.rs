@@ -456,7 +456,7 @@ fn extract_zip(archive_path: String, destination_dir: String) -> Result<String, 
 fn open_steam_store(appid: u64) -> Result<(), String> {
     let url = format!("https://store.steampowered.com/app/{appid}/");
     #[cfg(target_os="windows")]
-    Command::new("cmd").args(["/C", "start", "", &url]).spawn().map_err(|e| e.to_string())?;
+    Command::new("cmd").args(["/C", "start", "", url.as_str()]).spawn().map_err(|e| e.to_string())?;
     #[cfg(target_os="linux")]
     Command::new("xdg-open").arg(&url).spawn().map_err(|e| e.to_string())?;
     #[cfg(target_os="macos")]
@@ -468,7 +468,7 @@ fn open_steam_store(appid: u64) -> Result<(), String> {
 fn open_steam_install(appid: u64) -> Result<(), String> {
     let uri = format!("steam://install/{appid}");
     #[cfg(target_os="windows")]
-    Command::new("cmd").args(["/C", "start", "", &uri]).spawn().map_err(|e| e.to_string())?;
+    Command::new("cmd").args(["/C", "start", "", uri.as_str()]).spawn().map_err(|e| e.to_string())?;
     #[cfg(target_os="linux")]
     Command::new("xdg-open").arg(&uri).spawn().map_err(|e| e.to_string())?;
     #[cfg(target_os="macos")]

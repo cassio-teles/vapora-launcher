@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { open } from '@tauri-apps/plugin-dialog';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import {
   Gamepad2, Compass, Library, Download, Settings, Plus, Search, Folder,
-  Play, Trash2, RefreshCw, ChevronRight, ShieldCheck, Monitor,
+  Play, Trash2, RefreshCw, ChevronRight, ChevronLeft, ShieldCheck, Monitor, Minus, Square,
   ArrowDownToLine, X, Database, CheckCircle2, AlertCircle, LoaderCircle, Star, LayoutGrid
 } from 'lucide-react';
 
@@ -33,8 +34,12 @@ const formatBytes = (bytes: number) => {
   return `${value.toFixed(1)} ${units[unit]}`;
 };
 
+const appWindow = getCurrentWindow();
+
 export default function App() {
   const [page, setPage] = useState<Page>('store');
+  const [featuredIndex, setFeaturedIndex] = useState(0);
+  const [storeCategory, setStoreCategory] = useState('Destaques');
   const [games, setGames] = useState<Game[]>([]);
   const [catalog, setCatalog] = useState<Game[]>([]);
   const [repos, setRepos] = useState<Repo[]>([]);
@@ -116,7 +121,12 @@ export default function App() {
     `${g.title} ${g.developer}`.toLowerCase().includes(query.toLowerCase())), [catalog, query]);
   const filteredLibrary = useMemo(() => games.filter(g =>
     `${g.title} ${g.developer}`.toLowerCase().includes(query.toLowerCase())), [games, query]);
-  const featured = catalog[0];
+  const featured = catalog.length ? catalog[featuredIndex % catalog.length] : undefined;
+  useEffect(() => {
+    if (catalog.length < 2) return;
+    const timer = window.setInterval(() => setFeaturedIndex(index => (index + 1) % catalog.length), 6500);
+    return () => window.clearInterval(timer);
+  }, [catalog.length]);
 
   const showGame = (game: Game) => { setSelected(game); setPage('store'); };
   const openSources = async (game: Game) => {
@@ -188,16 +198,30 @@ export default function App() {
   ];
 
   return <div className="app-shell">
+    <div className="window-chrome" data-tauri-drag-region onMouseDown={e => { if (e.buttons === 1) void appWindow.startDragging(); }}>
+      <div className="chrome-brand"><span className="chrome-mark">V</span><span>Vapora</span><span className="chrome-menu">Arquivo&nbsp;&nbsp; Exibir&nbsp;&nbsp; Jogos&nbsp;&nbsp; Ajuda</span></div>
+      <div className="window-controls">
+        <button aria-label="Minimizar" onClick={() => void appWindow.minimize()}><Minus size={13}/></button>
+        <button aria-label="Maximizar" onClick={() => void appWindow.toggleMaximize()}><Square size={11}/></button>
+        <button className="close-window" aria-label="Fechar" onClick={() => void appWindow.close()}><X size={15}/></button>
+      </div>
+    </div>
     <header className="topbar">
       <button className="brand" aria-label="Vapora início" onClick={() => { setPage('store'); setSelected(null); }}>
-        <span className="brand-mark"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M9 13.5 23.8 24M38.5 12.5 24 24M24 24l1 16" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round"/><circle cx="9" cy="12" r="6.5" fill="currentColor"/><circle cx="39" cy="11" r="6.5" fill="currentColor"/><circle cx="25" cy="40" r="6.5" fill="currentColor"/><circle cx="24" cy="24" r="7.2" fill="#17212b" stroke="currentColor" strokeWidth="3"/><path d="M18 6c-3-4 2-5 0-8M28 5c-2-4 3-5 1-8" transform="translate(0 5)" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/></svg></span><span className="brand-word">VAPORA</span>
+        <span className="brand-mark"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M9 13.5 23.8 24M38.5 12.5 24 24M24 24l1 16" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round"/><circle cx="9" cy="12" r="6.5" fill="currentColor"/><circle cx="39" cy="11" r="6.5" fill="currentColor"/><circle cx="25" cy="40" r="6.5" fill="currentColor"/><circle cx="24" cy="24" r="7.2" fill="#17212b" stroke="currentColor" strokeWidth="3"/></svg></span><span className="brand-word">VAPORA</span>
       </button>
       <nav className="client-nav" aria-label="Navegação principal">
-        {nav.map(item => { const Icon = item.icon; return <button key={item.id} className={`client-tab ${page === item.id ? 'active' : ''}`} onClick={() => { setPage(item.id); setSelected(null); }}><Icon size={15}/><span>{item.label}</span>{item.id === 'downloads' && downloads.some(d => d.status === 'downloading') && <i className="nav-pulse"/>}</button>; })}
+        {nav.map(item => { const Icon = item.icon; return <button key={item.id} className={`client-tab ${page === item.id ? 'active' : ''}`} onClick={() => { setPage(item.id); setSelected(null); }}><Icon size={15}/><span>{item.id === 'store' ? 'Loja' : item.label}</span>{item.id === 'downloads' && downloads.some(d => d.status === 'downloading') && <i className="nav-pulse"/>}</button>; })}
       </nav>
-      <div className="top-search"><Search size={16}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Buscar na biblioteca" /></div>
-      <div className="top-status"><span className="status-dot"/> <span>LOCAL</span><span className="top-divider"/><span className="player-avatar">V</span></div>
+      <div className="top-search"><Search size={16}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Buscar na loja e biblioteca" /></div>
+      <div className="top-status"><span className="status-dot"/> <span>ONLINE LOCAL</span><span className="top-divider"/><span className="player-avatar">V</span><span>Jogador</span></div>
     </header>
+    {page === 'store' && !selected && <div className="store-toolbar">
+      <div className="store-toolbar-links">
+        {['Destaques','Descobrir','Categorias','Mais populares','Novidades'].map(label => <button key={label} className={storeCategory === label ? 'active' : ''} onClick={() => { setStoreCategory(label); document.getElementById(label === 'Destaques' ? 'store-featured' : 'store-catalog')?.scrollIntoView({behavior:'smooth',block:'start'}); }}>{label}<span>⌄</span></button>)}
+      </div>
+      <div className="store-toolbar-right"><button onClick={() => setPage('repositories')}>Suas fontes</button><button onClick={() => setModal('repo')}>＋ Adicionar catálogo</button></div>
+    </div>}
     <div className="app-body">
       <aside className="sidebar">
         <div className="side-heading"><span>BIBLIOTECA</span><button title="Adicionar jogo" onClick={() => setModal('local')}><Plus size={15}/></button></div>
@@ -210,11 +234,24 @@ export default function App() {
       <main className="main-content">
         {page === 'store' && !selected && <>
           <div className="page-topline"><div><span className="kicker">VAPORA / DESCOBERTA</span><h1>Descubra seu próximo jogo.</h1><p>Explore os catálogos que você escolheu adicionar.</p></div><button className="subtle-button" onClick={() => setModal('repo')}><Plus size={16}/> Adicionar repositório</button></div>
-          {featured ? <section className="feature-hero" style={featured.cover ? { backgroundImage: `linear-gradient(90deg, #0a1119 0%, #0a1119ed 31%, #0a111980 65%, #0a111955 100%), url("${featured.cover}")` } : undefined}>
-            <div className="feature-copy"><span className="feature-tag"><Star size={13} fill="currentColor"/> DESTAQUE DO CATÁLOGO</span><h2>{featured.title}</h2><p>{featured.description || 'Veja os detalhes deste jogo e confira as opções disponíveis nos repositórios conectados.'}</p><div className="feature-meta"><span>{featured.developer || 'Desenvolvedor não informado'}</span><span>•</span><span>{featured.source}</span></div><div className="feature-actions"><button className="primary-button" onClick={() => showGame(featured)}><ArrowDownToLine size={17}/> Ver opções</button><button className="ghost-button" onClick={() => showGame(featured)}>Mais detalhes <ChevronRight size={16}/></button></div></div>
-            <div className="feature-index"><span>CATÁLOGO</span><b>01</b><i/></div>
+          {featured ? <section className="steam-featured" id="store-featured">
+            <div className="featured-heading"><h2>Destaques e recomendados</h2><span>SELEÇÃO DO SEU CATÁLOGO</span></div>
+            <div className="featured-stage">
+              <button className="featured-arrow previous" aria-label="Jogo anterior" onClick={() => setFeaturedIndex(index => (index - 1 + catalog.length) % catalog.length)}><ChevronLeft size={30}/></button>
+              <button className="featured-art" onClick={() => showGame(featured)} style={featured.cover ? {backgroundImage:`linear-gradient(90deg,#08111a22,#08111a00 50%,#08111a22),url("${featured.cover}")`} : undefined}>
+                {!featured.cover && <span className="featured-no-art"><Gamepad2 size={60}/></span>}
+              </button>
+              <div className="featured-details">
+                <h3>{featured.title}</h3><p>{featured.description || 'Confira os detalhes e as fontes disponíveis para este jogo.'}</p>
+                <div className="featured-thumbs">{catalog.filter((_,i)=>i!==featuredIndex).slice(0,4).map((game,i)=><button key={game.id} onClick={()=>setFeaturedIndex(catalog.indexOf(game))} style={game.cover?{backgroundImage:`url("${game.cover}")`}:undefined} title={game.title}>{!game.cover && game.title.slice(0,1)}</button>)}</div>
+                <div className="featured-recommendation"><span>Disponível no catálogo</span><small>{featured.developer || featured.source}</small></div>
+                <button className="featured-view" onClick={()=>showGame(featured)}>Ver página do jogo <ChevronRight size={15}/></button>
+              </div>
+              <button className="featured-arrow next" aria-label="Próximo jogo" onClick={() => setFeaturedIndex(index => (index + 1) % catalog.length)}><ChevronRight size={30}/></button>
+            </div>
+            <div className="featured-pagination">{catalog.slice(0,Math.min(catalog.length,12)).map((game,i)=><button key={game.id} aria-label={`Mostrar ${game.title}`} className={i===featuredIndex?'active':''} onClick={()=>setFeaturedIndex(i)}/>)}</div>
           </section> : <section className="welcome-empty"><div className="welcome-orb"><Gamepad2 size={34}/></div><div><span className="kicker">SUA LOJA, SUAS FONTES</span><h2>Adicione seu primeiro repositório.</h2><p>Os jogos aparecem aqui depois que você conectar e sincronizar um catálogo.</p><button className="primary-button" onClick={() => setModal('repo')}><Plus size={16}/> Conectar repositório</button></div></section>}
-          <div className="section-heading"><div><span className="kicker">CATÁLOGO</span><h2>Jogos para explorar</h2><p>{catalog.length} jogos importados dos seus repositórios</p></div><button className="text-button" onClick={() => setPage('repositories')}>Gerenciar fontes <ChevronRight size={15}/></button></div>
+          <div className="section-heading" id="store-catalog"><div><span className="kicker">LOJA VAPORA</span><h2>Jogos para explorar</h2><p>{catalog.length} jogos importados dos seus repositórios</p></div><button className="text-button" onClick={() => setPage('repositories')}>Gerenciar fontes <ChevronRight size={15}/></button></div>
           {filteredCatalog.length ? <div className="store-grid">{filteredCatalog.map(game => <GameTile key={game.id} game={game} onClick={() => showGame(game)} onDownload={() => void openSources(game)}/>)}</div> : <div className="empty-state"><LayoutGrid size={30}/><b>Nenhum jogo no catálogo</b><span>Adicione um repositório HTTPS e sincronize para preencher esta página.</span><button className="outline-button" onClick={() => setModal('repo')}>Adicionar repositório</button></div>}
         </>}
 
@@ -235,7 +272,7 @@ export default function App() {
         {page === 'settings' && <><div className="page-topline"><div><span className="kicker">VAPORA / PREFERÊNCIAS</span><h1>Configurações</h1><p>Preferências, atualizações e informações do aplicativo.</p></div></div><div className="settings-layout"><section className="settings-card"><div className="settings-section-title"><h2>Aplicativo</h2><span>Informações gerais</span></div><div className="setting-row"><div><b>Armazenamento</b><span>Biblioteca e repositórios salvos localmente em SQLite.</span></div><em>Local</em></div><div className="setting-row"><div><b>Privacidade</b><span>Sem conta, perfil remoto, analytics ou servidor próprio.</span></div><em><ShieldCheck size={14}/> Ativo</em></div><div className="setting-row"><div><b>Plataformas</b><span>Windows e Linux desktop.</span></div><em><Monitor size={14}/> Multiplataforma</em></div><div className="setting-row"><div><b>Versão instalada</b><span>Vapora Launcher</span></div><em>0.5.0</em></div></section><section className="update-card"><div className="update-heading"><div className="update-symbol"><RefreshCw size={22}/></div><div><h2>Atualizações</h2><p>Mantenha o Vapora na versão mais recente.</p></div></div><p className="update-description">Verifique se existe uma versão mais nova publicada no GitHub. Quando houver, você poderá abrir a página oficial para baixar o instalador.</p><button className="primary-button update-button" disabled={updateBusy} onClick={() => void checkUpdates()}><RefreshCw size={15} className={updateBusy ? 'spin-icon' : ''}/>{updateBusy ? 'Verificando...' : 'Verificar atualizações'}</button>{updateInfo.message && <div className={`update-result ${updateInfo.status}`}><span>{updateInfo.message}</span>{updateInfo.status === 'available' && updateInfo.url && <a href={updateInfo.url} target="_blank" rel="noreferrer">Abrir página da atualização <ChevronRight size={14}/></a>}</div>}<small>As atualizações são verificadas pela página oficial de lançamentos do projeto.</small></section></div></>}
       </main>
     </div>
-    <footer className="app-footer"><span>VAPORA <i>•</i> LAUNCHER</span><span><span className="status-dot"/> {games.length} jogos na biblioteca <i>•</i> {repos.length} repositórios</span></footer>
+    <footer className="app-footer"><span>VAPORA <i>•</i> CLIENTE DE JOGOS</span><span><span className="status-dot"/> {games.length} jogos na biblioteca <i>•</i> {repos.length} repositórios</span></footer>
 
     {modal && <div className="modal-backdrop" onMouseDown={() => setModal(null)}><div className="modal-card" onMouseDown={e => e.stopPropagation()}>
       <div className="modal-head"><div><span className="kicker">VAPORA</span><h2>{modal === 'repo' ? 'Adicionar repositório' : modal === 'local' ? 'Adicionar à biblioteca' : 'Escolher uma fonte'}</h2></div><button className="icon-button" onClick={() => setModal(null)}><X size={19}/></button></div>

@@ -205,7 +205,7 @@ export default function App() {
   ];
 
   return <div className="app-shell">
-    <div className="window-chrome" data-tauri-drag-region onMouseDown={e => { if (e.buttons === 1 && !(e.target as HTMLElement).closest('.window-controls')) { e.preventDefault(); void appWindow.startDragging(); } }}>
+    <div className="window-chrome" data-tauri-drag-region>
       <div className="chrome-brand" data-tauri-drag-region><img className="chrome-logo-image" src={vaporaLogo} alt="Vapora" data-tauri-drag-region/><span className="chrome-menu" data-tauri-drag-region>Arquivo&nbsp;&nbsp; Exibir&nbsp;&nbsp; Jogos&nbsp;&nbsp; Ajuda</span></div>
       <div className="window-controls">
         <button aria-label="Minimizar" onClick={() => void appWindow.minimize()}><Minus size={13}/></button>

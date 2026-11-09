@@ -308,6 +308,58 @@ export default function App() {
   </div>;
 }
 
+
+function SteamGameDetail({ game, owned, onAcquire, onRepository, onBack }: {
+  game: StoreFeaturedGame; owned: boolean; onAcquire: () => void; onRepository: () => void; onBack: () => void;
+}) {
+  const [details, setDetails] = useState<any>(null);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [detailError, setDetailError] = useState('');
+  useEffect(() => {
+    let active = true;
+    setLoading(true); setDetailError('');
+    Promise.all([
+      invoke<any>('fetch_steam_game_details', { appid: game.appid }),
+      invoke<any[]>('fetch_steam_game_reviews', { appid: game.appid })
+    ]).then(([data, ratings]) => {
+      if (!active) return;
+      setDetails(data); setReviews(ratings);
+    }).catch(error => { if (active) setDetailError(String(error)); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [game.appid]);
+  const screenshots = details?.screenshots || [];
+  const movies = details?.movies || [];
+  return <div className="steam-game-page">
+    <button className="back-link" onClick={onBack}>‹ Voltar para explorar</button>
+    <section className="steam-game-banner" style={{ backgroundImage: 'linear-gradient(90deg,#101923 0%,#101923e8 42%,#10192366 100%),url("' + (details?.background || game.header_image) + '")' }}>
+      <div><span className="kicker">VAPORA / LOJA STEAM</span><h1>{details?.name || game.name}</h1>
+        <p>{(details?.developers || []).join(', ') || 'Informações oficiais da Steam'}</p>
+        <div className="detail-buttons">
+          {owned ? <a className="primary-button" href={'steam://install/' + game.appid}><Download size={16}/> Baixar</a> : <button className="primary-button" onClick={onAcquire}><Plus size={16}/> Adicionar à biblioteca</button>}
+          <a className="ghost-button" href={'https://store.steampowered.com/app/' + game.appid + '/'} target="_blank" rel="noreferrer">Adquirir na Steam <ChevronRight size={15}/></a>
+        </div>
+      </div>
+    </section>
+    {loading && <div className="steam-loading"><LoaderCircle className="spin-icon"/> Carregando detalhes, imagens e avaliações da comunidade…</div>}
+    {detailError && <div className="steam-loading">{detailError}</div>}
+    <div className="steam-detail-layout">
+      <div className="steam-detail-content">
+        <section className="steam-detail-section"><span className="kicker">DESCOBERTA</span><h2>Sobre o jogo</h2><p>{details?.short_description || details?.about_the_game?.replace(/<[^>]*>/g, ' ') || 'A descrição oficial não está disponível no momento.'}</p></section>
+        {movies.length > 0 && <section className="steam-detail-section"><h2>Vídeos e trailers</h2><div className="steam-video-grid">{movies.slice(0, 2).map((movie: any) => <video key={movie.id} controls preload="none" poster={movie.thumbnail}><source src={movie.mp4?.max || movie.mp4?.['480']} type="video/mp4"/></video>)}</div></section>}
+        {screenshots.length > 0 && <section className="steam-detail-section"><h2>Imagens do jogo</h2><div className="steam-screenshot-grid">{screenshots.slice(0, 8).map((shot: any) => <img key={shot.id} src={shot.path_full} alt={'Imagem de ' + game.name} loading="lazy"/>)}</div></section>}
+        <section className="steam-detail-section steam-community"><h2>Comentários e avaliações da comunidade</h2><p className="community-note">Avaliações públicas da comunidade Steam. Nesta versão, os comentários são exibidos para leitura; publicar exige integração e autenticação próprias.</p>
+          {reviews.length ? reviews.slice(0, 8).map((review: any, index: number) => <article className="steam-review" key={index}><div><b>{review.author?.persona_name || 'Jogador Steam'}</b><span className={review.voted_up ? 'review-up' : 'review-down'}>{review.voted_up ? 'Recomendado' : 'Não recomendado'}</span></div><p>{review.review}</p><small>{review.votes_up || 0} pessoas acharam útil{review.timestamp_created ? ' · ' + new Date(review.timestamp_created * 1000).toLocaleDateString('pt-BR') : ''}</small></article>) : <p>A Steam não retornou avaliações para este jogo.</p>}
+        </section>
+      </div>
+      <aside className="steam-detail-facts"><span className="kicker">INFORMAÇÕES</span><div><small>Desenvolvedor</small><b>{(details?.developers || []).join(', ') || '—'}</b></div><div><small>Publicadora</small><b>{(details?.publishers || []).join(', ') || '—'}</b></div><div><small>Gêneros</small><b>{(details?.genres || []).map((item: any) => item.description).join(', ') || '—'}</b></div><div><small>Preço na Steam</small><b>{details?.price_overview?.final_formatted || 'Consulte a loja'}</b></div><div><small>Biblioteca Vapora</small><b>{owned ? 'Adicionado' : 'Não adicionado'}</b></div>
+        {owned && <div className="steam-source-choices"><h3>Escolher versão para baixar</h3><a href={'steam://install/' + game.appid}><Download size={15}/> Baixar versão Steam</a><button onClick={onRepository}><Database size={15}/> Baixar via repositório</button><small>O repositório precisa conter uma entrada correspondente e uma fonte legítima para este jogo.</small></div>}
+      </aside>
+    </div>
+  </div>;
+}
+
 function GameTile({ game, onClick, onDownload, library = false }: { game: Game; onClick: () => void; onDownload: () => void; library?: boolean }) {
   return <article className="game-tile"><button className="tile-art" onClick={onClick} style={game.cover ? { backgroundImage: `linear-gradient(0deg, #080d13dd 0%, transparent 62%), url("${game.cover}")` } : undefined}>{!game.cover && <span className="tile-placeholder">{game.title.slice(0, 1).toUpperCase()}</span>}<span className="tile-hover">{library ? <Play size={21} fill="currentColor"/> : <ArrowDownToLine size={21}/>}</span></button><div className="tile-meta"><button className="tile-title" onClick={onClick}>{game.title}</button><span>{game.developer || 'Desenvolvedor não informado'}</span><div className="tile-bottom"><small>{library ? (game.executable ? 'INSTALADO' : 'ADICIONADO') : game.source}</small><button onClick={onDownload} title={library ? 'Iniciar jogo' : 'Ver opções de download'}>{library ? <Play size={15}/> : <ArrowDownToLine size={15}/>}</button></div></div></article>;
 }

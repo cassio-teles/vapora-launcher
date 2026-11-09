@@ -1,0 +1,27 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Vapora",
+  "version": "0.3.0",
+  "identifier": "com.vapora.launcher",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://127.0.0.1:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [{
+      "title": "Vapora",
+      "width": 1500,
+      "height": 940,
+      "minWidth": 1050,
+      "minHeight": 680,
+      "center": true,
+      "backgroundColor": "#0b1118"
+    }],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' asset: http://asset.localhost https: data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src ipc: http://ipc.localhost https: http://127.0.0.1:1420"
+    }
+  },
+  "bundle": { "active": true, "targets": ["msi", "nsis", "deb", "rpm", "appimage"], "icon": [], "resources": ["resources/aria2c.exe", "resources/ca-certificates.crt"] }
+}

@@ -1,0 +1,23 @@
+[package]
+name = "vapora"
+version = "0.3.0"
+description = "Vapora game launcher"
+authors = ["Vapora contributors"]
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rusqlite = { version = "0.32", features = ["bundled"] }
+reqwest = { version = "0.12", features = ["json", "rustls-tls", "stream"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "fs", "io-util", "process", "time"] }
+zip = { version = "2", default-features = false, features = ["deflate"] }
+futures-util = "0.3"
+sha2 = "0.10"
+base64 = "0.22"
+thiserror = "2"

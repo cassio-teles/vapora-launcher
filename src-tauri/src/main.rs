@@ -270,6 +270,22 @@ async fn sync_repository(app: AppHandle, id: i64) -> Result<usize, String> {
     Ok(count)
 }
 
+#[derive(Debug, Serialize)]
+struct SyncSummary { synced_repositories: usize, games_found: usize, errors: Vec<String> }
+
+#[tauri::command]
+async fn sync_all_repositories(app: AppHandle) -> Result<SyncSummary, String> {
+    let repositories = list_repositories(app.clone())?;
+    let mut summary = SyncSummary { synced_repositories: 0, games_found: 0, errors: Vec::new() };
+    for repository in repositories.into_iter().filter(|repository| repository.enabled) {
+        match sync_repository(app.clone(), repository.id).await {
+            Ok(count) => { summary.synced_repositories += 1; summary.games_found += count; }
+            Err(error) => summary.errors.push(format!("{}: {}", repository.name, error)),
+        }
+    }
+    Ok(summary)
+}
+
 #[tauri::command]
 fn remove_repository(app: AppHandle, id: i64) -> Result<(), String> {
     let db = connect(&app)?;
@@ -467,6 +483,40 @@ fn open_steam_store(appid: u64) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn open_steam_search(title: String) -> Result<(), String> {
+    let url = reqwest::Url::parse_with_params("https://store.steampowered.com/search/", &[("term", title.as_str())]).map_err(|e| e.to_string())?.to_string();
+    #[cfg(target_os="windows")]
+    Command::new("cmd").args(["/C", "start", "", url.as_str()]).spawn().map_err(|e| e.to_string())?;
+    #[cfg(target_os="linux")]
+    Command::new("xdg-open").arg(&url).spawn().map_err(|e| e.to_string())?;
+    #[cfg(target_os="macos")]
+    Command::new("open").arg(&url).spawn().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+fn start_main_window_drag(app: AppHandle) -> Result<(), String> {
+    app.get_webview_window("main").ok_or("Janela principal não encontrada")?.start_dragging().map_err(|e| format!("Falha ao mover a janela: {e}"))
+}
+
+#[tauri::command]
+fn close_main_window(app: AppHandle) -> Result<(), String> {
+    app.get_webview_window("main").ok_or("Janela principal não encontrada")?.close().map_err(|e| format!("Falha ao fechar a janela: {e}"))
+}
+
+#[tauri::command]
+fn minimize_main_window(app: AppHandle) -> Result<(), String> {
+    app.get_webview_window("main").ok_or("Janela principal não encontrada")?.minimize().map_err(|e| format!("Falha ao minimizar a janela: {e}"))
+}
+
+#[tauri::command]
+fn toggle_maximize_main_window(app: AppHandle) -> Result<(), String> {
+    let window = app.get_webview_window("main").ok_or("Janela principal não encontrada")?;
+    if window.is_maximized().map_err(|e| e.to_string())? { window.unmaximize().map_err(|e| format!("Falha ao restaurar a janela: {e}")) }
+    else { window.maximize().map_err(|e| format!("Falha ao maximizar a janela: {e}")) }
+}
+
+#[tauri::command]
 fn open_steam_install(appid: u64) -> Result<(), String> {
     let uri = format!("steam://install/{appid}");
     #[cfg(target_os="windows")]
@@ -500,7 +550,7 @@ fn reveal_path(path: String) -> Result<(), String> {
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![fetch_steam_game_details,fetch_steam_game_reviews,open_steam_store,open_steam_install,list_games,list_catalog_games,add_game,remove_game,list_repositories,add_repository,sync_repository,remove_repository,list_game_sources,download_game_source,extract_zip,launch_game,reveal_path])
+        .invoke_handler(tauri::generate_handler![fetch_steam_game_details,fetch_steam_game_reviews,open_steam_store,open_steam_search,open_steam_install,start_main_window_drag,close_main_window,minimize_main_window,toggle_maximize_main_window,list_games,list_catalog_games,add_game,remove_game,list_repositories,add_repository,sync_repository,sync_all_repositories,remove_repository,list_game_sources,download_game_source,extract_zip,launch_game,reveal_path])
         .run(tauri::generate_context!())
         .expect("error while running Vapora");
 }

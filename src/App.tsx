@@ -220,8 +220,8 @@ export default function App() {
   ];
 
   return <div className="app-shell">
-    <div className="window-chrome" data-tauri-drag-region>
-      <div className="chrome-brand" data-tauri-drag-region onMouseDown={(event) => { if (event.button === 0) void invoke('start_main_window_drag').catch(error => notify(`Falha ao mover a janela: ${String(error)}`, true)); }}><img className="chrome-logo-image" src={vaporaLogo} alt="Vapora" data-tauri-drag-region/><span className="chrome-menu" data-tauri-drag-region>Arquivo&nbsp;&nbsp; Exibir&nbsp;&nbsp; Jogos&nbsp;&nbsp; Ajuda</span></div>
+    <div className="window-chrome" data-tauri-drag-region onMouseDown={(event) => { const target = event.target as HTMLElement; if (event.button === 0 && !target.closest('.window-controls')) void invoke('start_main_window_drag').catch(error => notify(`Falha ao mover a janela: ${String(error)}`, true)); }}>
+      <div className="chrome-brand" data-tauri-drag-region><img className="chrome-logo-image" src={vaporaLogo} alt="Vapora" data-tauri-drag-region/><span className="chrome-menu" data-tauri-drag-region>Arquivo&nbsp;&nbsp; Exibir&nbsp;&nbsp; Jogos&nbsp;&nbsp; Ajuda</span></div>
       <div className="window-controls">
         <button aria-label="Minimizar" onClick={() => void invoke('minimize_main_window').catch(error => notify(String(error), true))}><Minus size={13}/></button>
         <button aria-label="Maximizar" onClick={() => void invoke('toggle_maximize_main_window').catch(error => notify(String(error), true))}><Square size={11}/></button>
